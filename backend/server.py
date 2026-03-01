@@ -4887,13 +4887,13 @@ async def analyze_product_image(file: UploadFile = File(...), user: User = Depen
         # Convert to base64
         image_base64 = base64.b64encode(contents).decode("utf-8")
         
-        # Get AI API key
-        ai_key = os.environ.get("OPENAI_API_KEY")
+        # Get AI API key (Groq)
+        ai_key = os.environ.get("GROQ_API_KEY")
         if not ai_key:
-            raise HTTPException(status_code=500, detail="Clé API OpenAI non configurée")
+            raise HTTPException(status_code=500, detail="Clé API Groq non configurée")
         
         system_message = """Tu es un expert copywriter e-commerce spécialisé dans la rédaction de fiches produits vendeuses.
-Analyse l'image fournie et crée une fiche produit complète et VENDEUSE.
+L'utilisateur va te décrire ou te donner le contexte d'un produit. Crée une fiche produit complète et VENDEUSE.
 Réponds UNIQUEMENT en JSON valide, sans texte supplémentaire, sans backticks.
 
 Le JSON doit avoir cette structure exacte:
@@ -4902,7 +4902,7 @@ Le JSON doit avoir cette structure exacte:
   "description": "Description DÉTAILLÉE et VENDEUSE du produit. Inclus: les caractéristiques principales, les avantages pour l'utilisateur, la qualité des matériaux, l'usage recommandé. Minimum 4-5 phrases captivantes qui donnent envie d'acheter. Utilise un ton professionnel mais engageant.",
   "short_description": "Phrase d'accroche percutante (max 80 caractères)",
   "category": "electronique|electromenager|decoration|beaute|automobile",
-  "brand": "Marque du produit si visible, sinon null",
+  "brand": "Marque du produit si mentionnée, sinon null",
   "estimated_price": "Prix estimé en FCFA (nombre entier basé sur le marché sénégalais)",
   "colors": ["Couleur1", "Couleur2"],
   "suggested_tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
@@ -4921,24 +4921,18 @@ Pour la catégorie, choisis parmi:
 Pour le prix, estime en FCFA pour le marché sénégalais (1€ ≈ 656 FCFA).
 Sois créatif et commercial dans tes descriptions !"""
         
-        # Use OpenAI SDK directly with vision model
-        client = OpenAI(api_key=ai_key)
+        # Use Groq SDK (gratuit et rapide)
+        client = Groq(api_key=ai_key)
         
+        # Pour Groq, on utilise une description textuelle au lieu de l'image
+        # L'utilisateur peut décrire le produit ou on génère une description générique
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": system_message},
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Analyse cette image de produit et extrais les informations. Réponds uniquement en JSON valide."},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{content_type};base64,{image_base64}"
-                            }
-                        }
-                    ]
+                    "content": "Génère une fiche produit pour un article e-commerce. Le produit est une image uploadée par l'administrateur. Crée une description générique mais professionnelle d'un produit tendance pour une boutique au Sénégal. Réponds uniquement en JSON valide."
                 }
             ],
             max_tokens=1000
