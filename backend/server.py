@@ -32,8 +32,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 # Image compression
 from PIL import Image as PILImage
 
-# AI Image Analysis - Using OpenAI SDK directly
-from openai import OpenAI
+# AI - Using Groq SDK (gratuit)
+from groq import Groq
 
 # PDF Generation
 from reportlab.lib.pagesizes import A4
